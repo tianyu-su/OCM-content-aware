@@ -8,3 +8,4 @@ data/amazon/*.b
 data/amazon/*.pkl
 data/amazon/dataset/*
 logs/*
+data/polyvore/utils_benchmark/dest/*
