@@ -36,11 +36,11 @@ def test_fitb(args):
     if DATASET == 'fashiongen':
         dl = DataLoaderFashionGen()
     elif DATASET == 'polyvore':
-        dl = DataLoaderPolyvore()
+        dl = DataLoaderPolyvore(polyvore_split=args.polyvore_split)
     train_features, adj_train, train_labels, train_r_indices, train_c_indices = dl.get_phase('train')
     val_features, adj_val, val_labels, val_r_indices, val_c_indices = dl.get_phase('valid')
     test_features, adj_test, test_labels, test_r_indices, test_c_indices = dl.get_phase('test')
-    adj_q, q_r_indices, q_c_indices, q_labels, q_ids, q_valid = dl.get_test_questions()
+    adj_q, q_r_indices, q_c_indices, q_labels, q_ids, q_valid = dl.get_test_questions(resampled=False)
     train_features, mean, std = dl.normalize_features(train_features, get_moments=True)
     val_features = dl.normalize_features(val_features, mean=mean, std=std)
     test_features = dl.normalize_features(test_features, mean=mean, std=std)
@@ -94,15 +94,15 @@ def test_fitb(args):
     with tf.Session() as sess:
         saver.restore(sess, load_from+'/'+'best_epoch.ckpt')
 
-        val_avg_loss, val_acc, conf, pred = sess.run([model.loss, model.accuracy, model.confmat, model.predict()], feed_dict=val_feed_dict)
-
-        print("val_loss=", "{:.5f}".format(val_avg_loss),
-              "val_acc=", "{:.5f}".format(val_acc))
-
-        test_avg_loss, test_acc, conf = sess.run([model.loss, model.accuracy, model.confmat], feed_dict=test_feed_dict)
-
-        print("test_loss=", "{:.5f}".format(test_avg_loss),
-              "test_acc=", "{:.5f}".format(test_acc))
+        # val_avg_loss, val_acc, conf, pred = sess.run([model.loss, model.accuracy, model.confmat, model.predict()], feed_dict=val_feed_dict)
+        #
+        # print("val_loss=", "{:.5f}".format(val_avg_loss),
+        #       "val_acc=", "{:.5f}".format(val_acc))
+        #
+        # test_avg_loss, test_acc, conf = sess.run([model.loss, model.accuracy, model.confmat], feed_dict=test_feed_dict)
+        #
+        # print("test_loss=", "{:.5f}".format(test_avg_loss),
+        #       "test_acc=", "{:.5f}".format(test_acc))
 
         num_processed = 0
         correct = 0

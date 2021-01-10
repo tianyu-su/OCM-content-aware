@@ -35,13 +35,13 @@ def test_compatibility(args):
     DATASET = config['dataset']
     if DATASET == 'polyvore':
         # load dataset
-        dl = DataLoaderPolyvore()
+        dl = DataLoaderPolyvore(polyvore_split=args.polyvore_split)
         orig_train_features, adj_train, train_labels, train_r_indices, train_c_indices = dl.get_phase('train')
         full_train_adj = dl.train_adj
         orig_val_features, adj_val, val_labels, val_r_indices, val_c_indices = dl.get_phase('valid')
         orig_test_features, adj_test, test_labels, test_r_indices, test_c_indices = dl.get_phase('test')
         full_test_adj = dl.test_adj
-        dl.setup_test_compatibility(resampled=args.resampled)
+        dl.setup_test_compatibility(resampled=False)
     elif DATASET == 'ssense':
         dl = DataLoaderFashionGen()
         orig_train_features, adj_train, train_labels, train_r_indices, train_c_indices = dl.get_phase('train')
@@ -121,7 +121,7 @@ def test_compatibility(args):
         labels = []
 
         # evaluate the the model for accuracy prediction
-        eval()
+        # eval()
 
         prob_act = tf.nn.sigmoid
 
@@ -206,7 +206,7 @@ def test_compatibility(args):
         AUC = compute_auc(preds, labels)
 
         # use this as a control value, if the model is ok, the value will be the same as in log
-        eval()
+        # eval()
 
         print('The AUC compat score is: {}'.format(AUC))
 
