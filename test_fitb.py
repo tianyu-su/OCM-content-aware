@@ -148,5 +148,7 @@ if __name__ == "__main__":
     parser.add_argument('-subset', '--subset', dest='subset', action='store_true',
                         help='Use only a subset of the nodes that form the outfit (3 of them) and use the others as connections')
     parser.add_argument("-lf", "--load_from", type=str, required=True, default=None, help="Model used.")
+    parser.add_argument('-pols', '--polyvore-split', dest='polyvore_split', default='nondisjoint', type=str,
+                    choices=['nondisjoint', 'disjoint'])
     args = parser.parse_args()
     test_fitb(vars(args))

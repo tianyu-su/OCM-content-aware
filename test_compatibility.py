@@ -226,5 +226,7 @@ if __name__ == "__main__":
                         help='Use the resampled test, where the invalid outfits are harder.')
     parser.add_argument("-k", type=int, default=1,
                     help="K used for the variable number of edges case")
+    parser.add_argument('-pols', '--polyvore-split', dest='polyvore_split', default='nondisjoint', type=str,
+                    choices=['nondisjoint', 'disjoint'])
     args = parser.parse_args()
     test_compatibility(vars(args))
