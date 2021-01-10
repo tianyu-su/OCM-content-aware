@@ -48,7 +48,8 @@ ap.add_argument("-sup_do", "--support_dropout", type=float, default=0.15,
 
 ap.add_argument('-ws', '--write_summary', dest='write_summary', default=False,
                 help="Option to turn on summary writing", action='store_true')
-ap.add_argument('--polyvore-split', default='nondisjoint', type=str, choices=['nondisjoint', 'disjoint'])
+ap.add_argument('-pols', '--polyvore-split', dest='polyvore_split', default='nondisjoint', type=str,
+                choices=['nondisjoint', 'disjoint'])
 
 fp = ap.add_mutually_exclusive_group(required=False)
 fp.add_argument('-bn', '--batch_norm', dest='batch_norm',
