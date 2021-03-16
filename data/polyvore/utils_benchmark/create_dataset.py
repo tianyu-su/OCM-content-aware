@@ -13,6 +13,7 @@ from scipy.sparse import lil_matrix, save_npz, csr_matrix
 
 from get_compatibility import get_compats
 from get_questions import get_questions
+from get_retrieval_questions import get_retrieval_questions
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--datadir', default='source')
@@ -115,6 +116,21 @@ def create_test(resampled=False):
                 questions[i][j][z] = id2idx[id]  # map the id to the node index
 
     questions_file = osp.join(save_path, 'questions_{}.json'.format(args.phase))
+    if resampled:
+        questions_file = questions_file.replace('questions', 'questions_RESAMPLED')
+    with open(questions_file, 'w') as f:
+        json.dump(questions, f)
+
+    # build the retrieval question indexes
+    questions = get_retrieval_questions(data_path=dataset_path)
+    for i in range(len(questions)):  # for each question
+        assert len(questions[i]) == 4
+        for j in range(2):  # questions list (j==0) or answers list (j==1)
+            for z in range(len(questions[i][j])):  # for each id in the list
+                id = int(questions[i][j][z])
+                questions[i][j][z] = id2idx[id]  # map the id to the node index
+
+    questions_file = osp.join(save_path, 'retrieval_questions_{}.json'.format(args.phase))
     if resampled:
         questions_file = questions_file.replace('questions', 'questions_RESAMPLED')
     with open(questions_file, 'w') as f:

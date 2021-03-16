@@ -3,15 +3,22 @@ This script loads a trained model and tests it for the FITB task.
 """
 
 import json
+import pdb
+
 import tensorflow as tf
 import argparse
 import numpy as np
 from collections import namedtuple
 
+from metrics import MRR_HR
 from utils import get_degree_supports, sparse_to_tuple, normalize_nonsym_adj
 from utils import construct_feed_dict
 from model.CompatibilityGAE import CompatibilityGAE
-from dataloaders import DataLoaderPolyvore, DataLoaderFashionGen
+from dataloaders import DataLoaderPolyvore
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+
 
 def test_fitb(args):
     args = namedtuple("Args", args.keys())(*args.values())
@@ -38,21 +45,21 @@ def test_fitb(args):
     elif DATASET == 'polyvore':
         dl = DataLoaderPolyvore(polyvore_split=args.polyvore_split)
     train_features, adj_train, train_labels, train_r_indices, train_c_indices = dl.get_phase('train')
-    val_features, adj_val, val_labels, val_r_indices, val_c_indices = dl.get_phase('valid')
+    # val_features, adj_val, val_labels, val_r_indices, val_c_indices = dl.get_phase('valid')
     test_features, adj_test, test_labels, test_r_indices, test_c_indices = dl.get_phase('test')
-    adj_q, q_r_indices, q_c_indices, q_labels, q_ids, q_valid = dl.get_test_questions(resampled=False)
+    adj_q, q_r_indices, q_c_indices, q_labels, q_ids, q_valid = dl.get_test_retrieval_questions(resampled=False)
     train_features, mean, std = dl.normalize_features(train_features, get_moments=True)
-    val_features = dl.normalize_features(val_features, mean=mean, std=std)
+    # val_features = dl.normalize_features(val_features, mean=mean, std=std)
     test_features = dl.normalize_features(test_features, mean=mean, std=std)
 
     train_support = get_degree_supports(adj_train, config['degree'], adj_self_con=ADJ_SELF_CONNECTIONS)
-    val_support = get_degree_supports(adj_val, config['degree'], adj_self_con=ADJ_SELF_CONNECTIONS)
+    # val_support = get_degree_supports(adj_val, config['degree'], adj_self_con=ADJ_SELF_CONNECTIONS)
     test_support = get_degree_supports(adj_test, config['degree'], adj_self_con=ADJ_SELF_CONNECTIONS)
     q_support = get_degree_supports(adj_q, config['degree'], adj_self_con=ADJ_SELF_CONNECTIONS)
 
     for i in range(1, len(train_support)):
         train_support[i] = norm_adj(train_support[i])
-        val_support[i] = norm_adj(val_support[i])
+        # val_support[i] = norm_adj(val_support[i])
         test_support[i] = norm_adj(test_support[i])
         q_support[i] = norm_adj(q_support[i])
 
@@ -65,7 +72,7 @@ def test_fitb(args):
         'is_train': tf.placeholder_with_default(True, shape=()),
         'support': [tf.sparse_placeholder(tf.float32, shape=(None, None)) for sup in range(num_support)],
         'node_features': tf.placeholder(tf.float32, shape=(None, None)),
-        'labels': tf.placeholder(tf.float32, shape=(None,))   
+        'labels': tf.placeholder(tf.float32, shape=(None,))
     }
 
     model = CompatibilityGAE(placeholders,
@@ -78,14 +85,14 @@ def test_fitb(args):
                     batch_norm=config['batch_norm'])
 
     # Construct feed dicts for train, val and test phases
-    train_feed_dict = construct_feed_dict(placeholders, train_features, train_support,
-                    train_labels, train_r_indices, train_c_indices, config['dropout'])
-    val_feed_dict = construct_feed_dict(placeholders, val_features, val_support,
-                        val_labels, val_r_indices, val_c_indices, 0., is_train=BN_AS_TRAIN)
-    test_feed_dict = construct_feed_dict(placeholders, test_features, test_support,
-                        test_labels, test_r_indices, test_c_indices, 0., is_train=BN_AS_TRAIN)
-    q_feed_dict = construct_feed_dict(placeholders, test_features, q_support,
-                        q_labels, q_r_indices, q_c_indices, 0., is_train=BN_AS_TRAIN)
+    # train_feed_dict = construct_feed_dict(placeholders, train_features, train_support,
+    #                 train_labels, train_r_indices, train_c_indices, config['dropout'])
+    # val_feed_dict = construct_feed_dict(placeholders, val_features, val_support,
+    #                     val_labels, val_r_indices, val_c_indices, 0., is_train=BN_AS_TRAIN)
+    # test_feed_dict = construct_feed_dict(placeholders, test_features, test_support,
+    #                     test_labels, test_r_indices, test_c_indices, 0., is_train=BN_AS_TRAIN)
+    # q_feed_dict = construct_feed_dict(placeholders, test_features, q_support,
+    #                     q_labels, q_r_indices, q_c_indices, 0., is_train=BN_AS_TRAIN)
 
     # Add ops to save and restore all the variables.
     saver = tf.train.Saver()
@@ -109,8 +116,10 @@ def test_fitb(args):
 
         kwargs = {'K': args.k, 'subset': args.subset,
                 'resampled': args.resampled, 'expand_outfit':args.expand_outfit}
-
-        for question_adj, out_ids, choices_ids, labels, valid in dl.yield_test_questions_K_edges(**kwargs):
+        print("inference....")
+        HR_ks = (1, 10, 100, 200)
+        total_scores=[]
+        for question_adj, out_ids, choices_ids, labels, valid in dl.yield_test_retrieval_questions_K_edges(**kwargs):
             q_support = get_degree_supports(question_adj, config['degree'], adj_self_con=ADJ_SELF_CONNECTIONS, verbose=False)
             for i in range(1, len(q_support)):
                 q_support[i] = norm_adj(q_support[i])
@@ -122,18 +131,32 @@ def test_fitb(args):
             # compute the output (correct or not) for the current FITB question
             preds = sess.run(model.outputs, feed_dict=q_feed_dict)
             preds = sigmoid(preds)
-            outs = preds.reshape((-1, 4))
+            # pdb.set_trace()
+
+            # outs = preds.reshape((-1, 4))
+            outs = preds.reshape((-1, 500))
             outs = outs.mean(axis=0) # pick the item with average largest probability, averaged accross all edges
-            gt = labels.reshape((-1, 4)).mean(axis=0)
-            predicted = outs.argmax()
-            gt = gt.argmax()
+
+            # update
+            total_scores.append(np.expand_dims(outs,axis=0))
+
+            # gt = labels.reshape((-1, 4)).mean(axis=0)
+            # predicted = outs.argmax()
+            # gt = gt.argmax()
             num_processed += 1
-            correct += int(predicted == gt)
+            # correct += int(predicted == gt)
 
-            print("[{}] Acc: {}".format(num_processed, correct/num_processed))
+            # print("[{}] Acc: {}".format(num_processed, correct/num_processed))
+            print(num_processed)
 
-    print('Best val score saved in log: {}'.format(config['best_val_score']))
-    print('Last val score saved in log: {}'.format(log['val']['acc'][-1]))
+        res_metrics=MRR_HR(np.concatenate(total_scores,axis=0),HR_ks=HR_ks)
+        print("\n\n")
+        print("MRR:{:.3F} ".format(res_metrics[0]))
+        for idx, kk in enumerate(HR_ks):
+            print("HR@{}:{:.3f} ".format(kk, res_metrics[1][idx]))
+
+    # print('Best val score saved in log: {}'.format(config['best_val_score']))
+    # print('Last val score saved in log: {}'.format(log['val']['acc'][-1]))
 
 if __name__ == "__main__":
     # TODO: remove unnecessary arguments

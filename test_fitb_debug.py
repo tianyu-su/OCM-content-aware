@@ -3,6 +3,8 @@ This script loads a trained model and tests it for the FITB task.
 """
 
 import json
+import pdb
+
 import tensorflow as tf
 import argparse
 import numpy as np
@@ -11,7 +13,7 @@ from collections import namedtuple
 from utils import get_degree_supports, sparse_to_tuple, normalize_nonsym_adj
 from utils import construct_feed_dict
 from model.CompatibilityGAE import CompatibilityGAE
-from dataloaders import DataLoaderPolyvore, DataLoaderFashionGen
+from dataloaders import DataLoaderPolyvore
 
 def test_fitb(args):
     args = namedtuple("Args", args.keys())(*args.values())
@@ -122,9 +124,13 @@ def test_fitb(args):
             # compute the output (correct or not) for the current FITB question
             preds = sess.run(model.outputs, feed_dict=q_feed_dict)
             preds = sigmoid(preds)
+            pdb.set_trace()
+            print("DEBUG-PREDS",preds.shape)
             outs = preds.reshape((-1, 4))
             outs = outs.mean(axis=0) # pick the item with average largest probability, averaged accross all edges
+            print('DEBUG-OUT',outs.shape)
             gt = labels.reshape((-1, 4)).mean(axis=0)
+            print('DEBUG-OUT',gt,gt.shape)
             predicted = outs.argmax()
             gt = gt.argmax()
             num_processed += 1

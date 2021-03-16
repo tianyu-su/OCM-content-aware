@@ -9,3 +9,5 @@ data/amazon/*.pkl
 data/amazon/dataset/*
 logs/*
 data/polyvore/utils_benchmark/dest/*
+data/polyvore/utils_benchmark/dest_no_retrieval_back/*
+benchmark_results/
