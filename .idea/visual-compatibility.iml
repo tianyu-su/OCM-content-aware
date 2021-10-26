@@ -10,7 +10,7 @@
       <excludeFolder url="file://$MODULE_DIR$/data/polyvore/utils_benchmark/dest" />
       <excludeFolder url="file://$MODULE_DIR$/data/polyvore/utils_benchmark/dest_no_retrieval_back" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.8 (cfcp) (2)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.6 (tf10)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">

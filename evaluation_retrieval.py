@@ -117,7 +117,9 @@ def test_fitb(args):
         kwargs = {'K': args.k, 'subset': args.subset,
                 'resampled': args.resampled, 'expand_outfit':args.expand_outfit}
         print("inference....")
-        HR_ks = (1, 10, 100, 200)
+        # HR_ks = (1, 10, 100, 200)
+        HR_ks = (1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200)
+
         total_scores=[]
         for question_adj, out_ids, choices_ids, labels, valid in dl.yield_test_retrieval_questions_K_edges(**kwargs):
             q_support = get_degree_supports(question_adj, config['degree'], adj_self_con=ADJ_SELF_CONNECTIONS, verbose=False)
